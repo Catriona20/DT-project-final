@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TrackNSeat - Location</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            transition: all 0.3s ease;
+        }
+        
+        body {
+            background-color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        
+        .container {
+            width: 380px;
+            padding: 25px;
+            border: 3px solid #FF6B00;
+            border-radius: 15px;
+            box-shadow: 0 0 15px rgba(255, 107, 0, 0.3);
+            background-color: white;
+        }
+        
+        .logo {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        .logo h1 {
+            font-size: 2.5rem;
+            color: #FF6B00;
+            font-weight: bold;
+        }
+        
+        .logo p {
+            color: #FF6B00;
+            font-size: 1rem;
+        }
+        
+        .location-options {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+        
+        .location-btn {
+            background-color: white;
+            color: #FF6B00;
+            border: 2px solid #FF6B00;
+            border-radius: 8px;
+            padding: 10px;
+            cursor: pointer;
+            font-weight: bold;
+            flex: 1;
+            margin: 0 5px;
+            text-align: center;
+        }
+        
+        .location-btn:hover, .location-btn.active {
+            background-color: #FF6B00;
+            color: white;
+        }
+        
+        button {
+            background-color: #FF6B00;
+            color: white;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 10px;
+            width: 100%;
+        }
+        
+        button:hover {
+            background-color: #ff8a33;
+            transform: scale(1.02);
+        }
+        
+        .current-location {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+            padding: 12px;
+            border: 2px solid #FF6B00;
+            border-radius: 8px;
+        }
+        
+        .current-location i {
+            color: #FF6B00;
+            margin-right: 10px;
+            font-size: 1.2rem;
+        }
+        
+        .current-location span {
+            color: #333;
+        }
+        
+        .detection-status {
+            color: #FF6B00;
+            text-align: center;
+            margin-top: 15px;
+            font-weight: bold;
+            padding: 12px;
+            border-radius: 8px;
+            display: none;
+        }
+        
+        .detection-status.success {
+            display: block;
+            background-color: rgba(255, 107, 0, 0.1);
+            border: 1px solid #FF6B00;
+        }
+        
+        .detection-status i {
+            margin-right: 5px;
+        }
+        
+        .input-group {
+            position: relative;
+            margin-bottom: 25px;
+        }
+        
+        input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #FF6B00;
+            border-radius: 8px;
+            font-size: 1rem;
+            outline: none;
+            background: transparent;
+        }
+        
+        input:focus {
+            border-color: #FF6B00;
+            box-shadow: 0 0 5px rgba(255, 107, 0, 0.5);
+        }
+        
+        label {
+            position: absolute;
+            left: 12px;
+            top: 12px;
+            color: #FF6B00;
+            font-weight: bold;
+            pointer-events: none;
+            transition: 0.3s ease all;
+            background-color: white;
+            padding: 0 5px;
+        }
+        
+        input:focus ~ label,
+        input:not(:placeholder-shown) ~ label {
+            top: -10px;
+            font-size: 0.8rem;
+            color: #FF6B00;
+        }
+        
+        .loader {
+          border: 4px solid #f3f3f3;
+          border-radius: 50%;
+          border-top: 4px solid #FF6B00;
+          width: 20px;
+          height: 20px;
+          animation: spin 1s linear infinite;
+          display: inline-block;
+          margin-right: 10px;
+          vertical-align: middle;
+        }
+
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+        
+        .location-indicator {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 30px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">
+            <h1>TrackNSeat</h1>
+            <p>College Bus Tracking System</p>
+        </div>
+        
+        <div class="location-indicator">
+            <div id="locationLoader" class="loader"></div>
+            <span id="locationStatus">Detecting your location...</span>
+        </div>
+        
+        <div class="location-options">
+            <div class="location-btn active" onclick="selectOption(this, 'current')">Current Location</div>
+            <div class="location-btn" onclick="selectOption(this, 'custom')">Custom Location</div>
+        </div>
+        
+        <form id="locationForm" style="display: none;">
+            <div class="input-group">
+                <input type="text" id="customLocation" placeholder=" ">
+                <label for="customLocation">Enter Location</label>
+            </div>
+        </form>
+        
+        <button type="button" id="continueBtn" onclick="navigateToMapPage()" disabled>Continue</button>
+        
+        <p class="detection-status" id="status"></p>
+    </div>
+
+    <script>
+        let selectedOption = 'current';
+        
+        function selectOption(element, option) {
+            // Remove active class from all buttons
+            document.querySelectorAll('.location-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // Add active class to clicked button
+            element.classList.add('active');
+            selectedOption = option;
+            
+            // Show/hide custom location form
+            const locationForm = document.getElementById('locationForm');
+            locationForm.style.display = option === 'custom' ? 'block' : 'none';
+            
+            if (option === 'custom') {
+                document.getElementById('continueBtn').disabled = true;
+                document.getElementById('status').classList.remove('success');
+                document.getElementById('status').style.display = 'none';
+                document.getElementById('locationLoader').style.display = 'none';
+                document.getElementById('locationStatus').textContent = "Enter your location";
+            } else {
+                simulateLocationDetection();
+            }
+        }
+        
+        // Simulate location detection
+        function simulateLocationDetection() {
+            document.getElementById('locationLoader').style.display = 'inline-block';
+            document.getElementById('locationStatus').textContent = "Detecting your location...";
+            document.getElementById('continueBtn').disabled = true;
+            document.getElementById('status').classList.remove('success');
+            document.getElementById('status').style.display = 'none';
+            
+            setTimeout(() => {
+                document.getElementById('locationLoader').style.display = 'none';
+                document.getElementById('locationStatus').textContent = "College Main Gate";
+                document.getElementById('status').textContent = "✅ Location detected successfully!";
+                document.getElementById('status').classList.add('success');
+                document.getElementById('status').style.display = 'block';
+                document.getElementById('continueBtn').disabled = false;
+            }, 2000);
+        }
+        
+        function navigateToMapPage() {
+            if (selectedOption === 'custom') {
+                const customLocation = document.getElementById('customLocation').value;
+                if (!customLocation) {
+                    alert('Please enter your location');
+                    return;
+                }
+            }
+            
+            // Navigate to map page
+            window.location.href = 'map.html';
+        }
+        
+        // Start location detection when page loads
+        window.onload = function() {
+            simulateLocationDetection();
+            
+            // Add event listener for custom location input
+            document.getElementById('customLocation').addEventListener('input', function() {
+                const value = this.value.trim();
+                if (value) {
+                    document.getElementById('status').textContent = "✅ Location detected successfully!";
+                    document.getElementById('status').classList.add('success');
+                    document.getElementById('status').style.display = 'block';
+                    document.getElementById('continueBtn').disabled = false;
+                } else {
+                    document.getElementById('status').classList.remove('success');
+                    document.getElementById('status').style.display = 'none';
+                    document.getElementById('continueBtn').disabled = true;
+                }
+            });
+        };
+    </script>
+</body>
+</html>
