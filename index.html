@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>TrackNSeat - Live Map</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            transition: all 0.3s ease;
+        }
+
+        body {
+            background-color: white;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            background-color: white;
+            color: #FF6B00;
+            padding: 15px;
+            text-align: center;
+            border-bottom: 3px solid #FF6B00;
+        }
+
+        header h1 {
+            font-weight: bold;
+            font-size: 1.8rem;
+        }
+
+        .search-container {
+            display: flex;
+            padding: 15px;
+            background-color: white;
+            border-bottom: 2px solid #FF6B00;
+        }
+        
+        .search-input {
+            flex: 1;
+            padding: 10px;
+            margin-right: 10px;
+            border: 2px solid #FF6B00;
+            border-radius: 8px;
+            font-size: 1rem;
+        }
+        
+        .search-button {
+            background-color: #FF6B00;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 0 20px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        
+
+        .content {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .sidebar {
+            width: 300px;
+            background-color: white;
+            border-right: 3px solid #FF6B00;
+            padding: 15px;
+            overflow-y: auto;
+        }
+
+        .sidebar h2 {
+            color: #FF6B00;
+            margin-bottom: 15px;
+            font-size: 1.3rem;
+            font-weight: bold;
+        }
+
+        .buses-list {
+            list-style: none;
+        }
+
+        .bus-item {
+            background-color: #fff;
+            border: 2px solid #FF6B00;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 10px;
+            cursor: pointer;
+        }
+
+        .bus-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 10px rgba(255, 107, 0, 0.2);
+        }
+
+        .bus-item h3 {
+            color: #FF6B00;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .bus-info {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 8px;
+            font-size: 0.9rem;
+        }
+
+        .seats-available {
+            background-color: #FF6B00;
+            color: white;
+            padding: 3px 8px;
+            border-radius: 20px;
+            font-weight: bold;
+        }
+
+        .map-container {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+        }
+
+        #map {
+            width: 100%;
+            height: 100%;
+        }
+
+        .bus-details {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            background-color: white;
+            border: 3px solid #FF6B00;
+            border-radius: 10px;
+            padding: 15px;
+            width: 280px;
+            display: none;
+            z-index: 100;
+        }
+
+        .bus-details h3 {
+            color: #FF6B00;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+
+        .detail-label {
+            font-weight: bold;
+            color: #333;
+        }
+
+        .detail-value {
+            color: #FF6B00;
+            font-weight: bold;
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            cursor: pointer;
+            color: #FF6B00;
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+
+        .progress-container {
+            width: 100%;
+            height: 10px;
+            background-color: #ddd;
+            border-radius: 5px;
+            margin-top: 10px;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background-color: #FF6B00;
+            border-radius: 5px;
+            width: 75%;
+        }
+
+        .user-location-btn {
+            position: absolute;
+            bottom: 80px;
+            right: 20px;
+            background-color: white;
+            border: 2px solid #FF6B00;
+            color: #FF6B00;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            font-size: 1.2rem;
+            z-index: 10;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        .user-location-btn:hover {
+            background-color: #FF6B00;
+            color: white;
+        }
+
+             .route-panel {
+                position: absolute;
+                top: 100px;
+                right: 20px;
+                width: 250px;
+                border-radius: 0 0 10px 10px;
+                overflow: hidden;
+                box-shadow: 0 0 10px rgba(0,0,0,0.1);
+                }
+
+                .route-header {
+                background: #FF6B00;
+                color: white;
+                padding: 10px;
+                font-weight: bold;
+                font-size: 18px;
+                }
+
+                .route-body {
+                background: white;
+                padding: 10px;
+                }
+
+                .stop {
+                display: flex;
+                align-items: flex-start;
+                margin: 10px 0;
+                }
+
+                .dot {
+                width: 12px;
+                height: 12px;
+                border-radius: 50%;
+                margin-right: 10px;
+                margin-top: 5px;
+                background-color: #FF6B00;
+                }
+
+                .dot.unfilled {
+                border: 2px solid #FF6B00;
+                background-color: white;
+                }
+
+                .bus-arrival {
+                font-size: 12px;
+                color: #1e90ff;
+                }
+
+                .bus-number {
+                background: #e0e0e0;
+                display: inline-block;
+                margin-top: 3px;
+                padding: 2px 6px;
+                border-radius: 4px;
+                font-weight: bold;
+                }
+
+                .bus-icon {
+                background: #FF6B00;
+                padding: 2px 5px;
+                color: white;
+                border-radius: 2px;
+                margin-right: 5px;
+                }
+
+                /* Highlight selected bus card in orange */
+                .bus-item.selected-bus {
+                background-color: #FF6B00 !important;
+                color: white;
+                }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>TrackNSeat</h1>
+    </header>
+
+    <div class="search-container">
+        <input type="text" class="search-input" id="fromLocation" placeholder="From: Your Current Location" value="Enter your Bus Stop">
+        <input type="text" class="search-input" id="toLocation" placeholder="To: College Campus" value="Get your Bus Location">
+        <button class="search-button" onclick="updateRoute()">Update</button>
+    </div>
+
+    <div class="content">
+        <div class="sidebar">
+            <h2>Available Buses</h2>
+            <ul class="buses-list">
+                
+                <li class="bus-item" onclick="showBusDetails('Bus 101', 15, '5 min')">
+                    <h3>Bus 101</h3>
+                    <div>Route: Main Gate - Campus</div>
+                    <div class="bus-item" onclick="toggleRoutePanel('101')" id="bus-101">Bus 101</div>
+                    <div class="bus-info">
+                        <span>ETA: 5 min</span>
+                        <span class="seats-available">15 seats</span>
+                    </div>
+                </li>
+                <li class="bus-item" onclick="showBusDetails('Bus 203', 8, '12 min', false)">
+                    <h3>Bus 203</h3>
+                    <div>Route: Hostels - Library</div>
+                    <div class="bus-info">
+                        <span>ETA: 12 min</span>
+                        <span class="seats-available">8 seats</span>
+                    </div>
+                </li>
+                <li class="bus-item" onclick="showBusDetails('Bus 305', 22, '2 min', false)">
+                    <h3>Bus 305</h3>
+                    <div>Route: Stadium - Main Gate</div>
+                    <div class="bus-info">
+                        <span>ETA: 2 min</span>
+                        <span class="seats-available">22 seats</span>
+                    </div>
+                </li>
+                <li class="bus-item" onclick="showBusDetails('Bus 412', 3, '7 min', false)">
+                    <h3>Bus 412</h3>
+                    <div>Route: Library - Hostels</div>
+                    <div class="bus-info">
+                        <span>ETA: 7 min</span>
+                        <span class="seats-available">3 seats</span>
+                    </div>
+                </li>
+                <li class="bus-item" onclick="showBusDetails('Bus 509', 17, '15 min', false)">
+                    <h3>Bus 509</h3>
+                    <div>Route: Campus - Stadium</div>
+                    <div class="bus-info">
+                        <span>ETA: 15 min</span>
+                        <span class="seats-available">17 seats</span>
+                    </div>
+                </li>
+            </ul>
+        </div>
+        <div class="map-container">
+            <div id="map"></div>
+
+            <div class="bus-details" id="busDetails">
+                <span class="close-btn" onclick="hideBusDetails()">×</span>
+                <h3 id="busTitle">Bus 101</h3>
+                <div class="detail-row">
+                    <span class="detail-label">Seats Available:</span>
+                    <span class="detail-value" id="seatsValue">15</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Estimated Arrival:</span>
+                    <span class="detail-value" id="etaValue">5 min</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Current Speed:</span>
+                    <span class="detail-value">40 km/h</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Next Stop:</span>
+                    <span class="detail-value">Main Campus</span>
+                </div>
+                <div>
+                    <span class="detail-label">Route Progress:</span>
+                    <div class="progress-container">
+                        <div class="progress-bar"></div>
+                    </div>
+                </div>
+            </div>
+
+            <button class="user-location-btn" onclick="centerUserLocation()" title="Center to your location">📍</button>
+        </div>
+    </div>
+
+<!-- Route Panel for Bus 101 -->
+<div id="route-panel-101" class="route-panel" style="display: none;">
+    <div class="route-header">Bus 101<br><small>To Campus Terminal</small></div>
+    <div class="route-body">
+      <div class="stop filled"><div class="dot"></div><div class="stop-info"><strong>Triplicane</strong></div></div>
+      <div class="stop filled"><div class="dot"></div><div class="stop-info"><strong>D1 Police Station</strong></div></div>
+      <div class="stop filled">
+        <div class="dot"></div>
+        <div class="stop-info">
+          <strong>Ice House</strong>
+          <div class="bus-arrival">In 13 min</div>
+          <div class="bus-number"><span class="bus-icon">B</span> K0101</div>
+        </div>
+      </div>  
+      <!-- Unfilled (remaining) -->
+      <div class="stop "><div class="dot unfilled"></div><div class="stop-info"><strong>Meesapet Market</strong></div></div>
+      <div class="stop"><div class="dot unfilled"></div><div class="stop-info"><strong>New College</strong></div></div>
+      <div class="stop"><div class="dot unfilled"></div><div class="stop-info"><strong>Fire Office</strong></div></div>
+      <div class="stop"><div class="dot unfilled"></div><div class="stop-info"><strong>Poonamallee Bye Pass</strong></div></div>
+    </div>
+  </div>
+    <!-- Google Maps API and custom map logic -->
+    <script src="map.js"></script>
+    <script async defer
+    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCFJvTQFI99waOPgeaCPAklYcN4uNj7vjY&callback=initMap&libraries=places">
+    </script>
+</body>
+</html>
