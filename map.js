@@ -4,6 +4,10 @@ let busMarker;
 let directionsService;
 let directionsRenderer;
 
+// Your Firebase Realtime Database URL (without https:// and trailing slash)
+const firebaseUrl = "https://bus-tracking-83022-default-rtdb.firebaseio.com";
+
+
 function initMap() {
     // Initialize map
     map = new google.maps.Map(document.getElementById("map"), {
@@ -53,10 +57,10 @@ function initMap() {
 
             // Dummy bus location (replace with live GPS data from your backend)
             const busPos = {
-                lat: 13.0380, // example coordinates
-                lng: 80.1240,
+                lat: 12.985710,//13.0380, example coordinates
+                lng: 80.219248,//80.1240,
             };
-
+    
             // Add marker for bus
             busMarker = new google.maps.Marker({
                 position: busPos,
@@ -71,8 +75,8 @@ function initMap() {
                     ),
                     scaledSize: new google.maps.Size(40, 40)
                 } 
-                
             });
+            
             // Add marker for other buses
             const otherBuses = [
                 {
@@ -107,7 +111,7 @@ function initMap() {
             });
     
             // Center map around user
-            map.setCenter(userPos);
+           map.setCenter(userPos);
 
             // Show route between user and bus
             calculateAndDisplayRoute(userPos, busPos);
@@ -118,6 +122,7 @@ function initMap() {
         alert("Geolocation is not supported.");
     }
 }
+
 
 function toggleRoutePanel(busId) {
   const panel = document.getElementById(`route-panel-${busId}`);
@@ -136,6 +141,28 @@ function toggleRoutePanel(busId) {
     busItem.classList.add("selected-bus");
   }
 }
+  
+function fetchBusLocation(userPos) {
+    fetch(`${firebaseUrl}/bus.json`)
+        .then(response => response.json())
+        .then(data => {
+            if (data && data.latitude && data.longitude) {
+                const busPos = {
+                    lat: parseFloat(data.latitude),
+                    lng: parseFloat(data.longitude)
+                };
+
+                busMarker.setPosition(busPos);
+                calculateAndDisplayRoute(userPos, busPos);
+            } else {
+                console.error("Invalid bus data from Firebase");
+            }
+        })
+        .catch(error => {
+            console.error("Error fetching data from Firebase:", error);
+        });
+}
+
 function calculateAndDisplayRoute(start, end) {
     directionsService.route({
         origin: start,
@@ -158,3 +185,16 @@ function centerUserLocation() {
         map.setCenter(userMarker.getPosition());
     }
 }
+function showBusDetails(busName, seats, eta) {
+    document.getElementById("busTitle").innerText = busName;
+    document.getElementById("seatsValue").innerText = seats;
+    document.getElementById("etaValue").innerText = eta;
+
+    // Show the bus details popup
+    document.getElementById("busDetails").style.display = "block";
+}
+function hideBusDetails() {
+    document.getElementById("busDetails").style.display = "none";
+  }
+  
+
